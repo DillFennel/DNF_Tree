@@ -382,7 +382,7 @@ class Tree{
                             number_of_children --;
                         }
                         else{
-                            if(keys_found.find(get_opposite_key(children[i]->get_key())).keys_found.end() or  children[i]->get_key() == 0b1111111111111111){
+                            if(keys_found.find(get_opposite_key(children[i]->get_key()))!=keys_found.end() or  children[i]->get_key() == 0b1111111111111111){
                                 to_one();
                                 return true;
                             }
@@ -455,14 +455,8 @@ bool equal_tree(Tree* t1, Tree* t2){ //Эквивалентны ли выраж�
     }
 }
 
-bool oposite_tree(Tree* t1, Tree* t2){//Обратны ли выражения. Сравниваем по ключу
-    string key1 = t1->get_key();
-    string key2 = t2->get_key();
-    for(int i=0; i<16; i++){
-        if(key1[i]==key2[i]){
-            return false;
-        }
-    }
+bool oposite_tree(Tree* tree1, Tree* tree2){//Обратны ли выражения. Сравниваем по ключу
+    if(tree1->get_key() & tree2->get_key() == 0 && tree1->get_key() & tree2->get_key() == 0b1111111111111111)
     return true;
 }
 
@@ -505,12 +499,12 @@ void make_dnf()//Ввод ДНФ, запись его в файл
     }
     fout.close();
 }
-bool make_tree_from_dnf(Tree* t){//Из ДНФ из файла делает дерево
-    if(t->get_n()!=0 or t->get_key()!=string(16, '0')){
-        t->to_null();
+bool make_tree_from_dnf(Tree* tree){//Из ДНФ из файла делает дерево
+    if(tree->get_number_of_children()!=0 or tree->get_key()!=0){
+        tree->to_null();
     }
-    if(t->get_value() != 8){
-        t->set_value(8);
+    if(tree->get_value() != '+'){
+        tree->set_value('+');
     }
     string elem_kon;//Одна строчка из файла или одна элементарная коньюкция
     ifstream fin("dnf.txt");
@@ -530,11 +524,11 @@ bool make_tree_from_dnf(Tree* t){//Из ДНФ из файла делает де
                 }
             }
         }
-        if(node->get_n()==1){//Если в элементарной коньюкции один элемент, добавим только его
-            t->add_child(node->get_child(0));
+        if(node->get_number_of_children()==1){//Если в элементарной коньюкции один элемент, добавим только его
+            tree->add_child(node->get_child(0));
         }
         else{
-            t->add_child(node);
+            tree->add_child(node);
         }
     }
     fin.close();

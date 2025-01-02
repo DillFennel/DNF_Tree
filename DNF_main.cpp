@@ -215,7 +215,9 @@ class Tree{
                         key[i] = '0';
                     }
                 }
-            }
+            number_of_children = 1;
+            children.push_back(child);
+            value = v;
         }
         Tree(int v, Tree* child1, Tree* child2){
             if(v<0 or v>10){

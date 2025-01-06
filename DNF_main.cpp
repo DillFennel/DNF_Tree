@@ -5,6 +5,9 @@
 #include <list>
 #include <map>
 #include <set>
+#include <bitset>
+#include <cassert>
+
 using namespace std;
 /*
 Дано - дерево, обозначающее ДНФ
@@ -14,17 +17,37 @@ using namespace std;
 2) По правилам сократить количество вершин
 Ключ вершины - это результаты функции при всех возможных переменных, то есть последний столбец в таблице истиности
 */
-int degree_of_two(int n){
+unsigned degree_of_two(int n){//Функция для получения степеней двойки (натуральных или 0)
     if(n<0){
         cerr<<"Error: не работает с отрицательными степянями";
         exit(1);
     }
     return 1 << n;
 }
-int get_opposite_key(int key){//По ключу находим его обратный. То есть, заменяем 0 на 1, 1 на 0. Подается указатель на ключ и его длина
-    return ~key;
+unsigned get_mask(unsigned number_of_variables){//Получение маски для заданого количества переменных (Нужны, чтобы обрезать ключи до нужного размера)
+    return ((1 << degree_of_two(number_of_variables)) - 1);
 }
+unsigned get_opposite_key(unsigned key, unsigned number_of_variables){//По ключу находим его обратный. То есть, заменяем 0 на 1, 1 на 0. Подается указатель на ключ и количество переменных
+    return (~key&get_mask(number_of_variables));
+}
+
+bool check_equal_keys(unsigned key1, unsigned key2){ //Эквивалентны ли выражения. Сравниваем по ключу
+    return (key1 == key2);
+}
+bool check_opposite_keys(unsigned key1, unsigned key2, unsigned number_of_variables){//Обратны ли выражения. Сравниваем по ключу. Также указываем количество переменных
+    return (key1 == get_opposite_key(key2, number_of_variables));
+}
+
+int kon_keys(unsigned key1, unsigned key2){
+    return key1&key2;
+}
+int dez_keys(unsigned key1, unsigned key2){
+    return key1|key2;
+}
+
 //char simbols [11] = {'0', '1', 'a', 'b', 'c', 'd', '!', '*', '+', '>', '='};//Все возможные значения в вершине
+char simbols[4] = {'a', 'b', 'c', 'd'};
+
 class Tree{
     public:
         int get_key(){ //
@@ -66,7 +89,7 @@ class Tree{
         //Добавить условия для значений
             value = v;
         }
-        int get_value(){//Позволяет получить значение, установленное в вершине
+        char get_value(){//Позволяет получить значение, установленное в вершине
             return value;
         }
         bool add_child(Tree * new_child){//Позволяет добавить ребенка вершине
@@ -83,7 +106,7 @@ class Tree{
                     if(number_of_children > 0){
                         too_many_children();
                     }
-                    key = get_opposite_key(new_child->get_key());
+                    key = get_opposite_key(new_child->get_key(), degree_of_two(number_of_variables));
                     break;
                 }
                 case '*':{
@@ -95,14 +118,14 @@ class Tree{
                     break;
                 }
                 case '>':{
-                    key = get_opposite_key(key) | new_child->get_key();
+                    key = get_opposite_key(key, degree_of_two(number_of_variables)) | new_child->get_key();
                     break;
                 }
                 case '=':{
                     if(number_of_children > 0){
                         too_many_children();
                     }
-                    key = key&new_child->get_key() | get_opposite_key(key)&get_opposite_key(new_child->get_key());
+                    key = key&new_child->get_key() | get_opposite_key(key, degree_of_two(number_of_variables))&get_opposite_key(new_child->get_key(), degree_of_two(number_of_variables));
                     break;
                 }
                 default:{
@@ -133,8 +156,10 @@ class Tree{
             cerr<<"Ошибка.";
             exit(4);
         }
-        Tree(){value='+';}//По умолчанию величина в вершине равна 8, то есть по умолчанию стоит операция суммы
-        Tree(char v){
+        Tree(int n=4){//По умолчанию величина в вершине равна 8, то есть по умолчанию стоит операция суммы
+            value='+'; 
+            number_of_variables=n;}
+        Tree(char v, int n=4){
             switch(v){
                 case '0':
                 case '!':
@@ -169,9 +194,10 @@ class Tree{
                     wrong_value();
                 }
             }
+            number_of_variables=n;
             value = v;
         }
-        Tree(int v, Tree* child){
+        Tree(int v, Tree* child, int n=4){     
             switch (v){
                 case '0':
                 case '1':
@@ -182,7 +208,7 @@ class Tree{
                     cant_have_children();
                 }
                 case '!':{
-                    key = get_opposite_key(key);
+                    key = get_opposite_key(key, degree_of_two(number_of_variables));
                     break;
                 }
                 case '*':
@@ -196,11 +222,12 @@ class Tree{
                     wrong_value();
                 }
             }
+            number_of_variables=n;
             number_of_children = 1;
             children.push_back(child);
             value = v;
         }
-        Tree(int v, Tree* child1, Tree* child2){
+        Tree(int v, Tree* child1, Tree* child2, int n=4){
             switch(v){
                 case '0':
                 case '1':
@@ -220,15 +247,16 @@ class Tree{
                     key = child1->get_key() | child2->get_key();
                 }
                 case '>':{
-                    key = get_opposite_key(child1->get_key()) | child2->get_key();
+                    key = get_opposite_key(child1->get_key(), degree_of_two(number_of_variables)) | child2->get_key();
                 }
                 case '=':{
-                    key = child1->get_key()&child2->get_key() | get_opposite_key(child1->get_key())&get_opposite_key(child2->get_key());
+                    key = child1->get_key()&child2->get_key() | get_opposite_key(child1->get_key(), degree_of_two(number_of_variables))&get_opposite_key(child2->get_key(), degree_of_two(number_of_variables));
                 }
                 default:{
                     wrong_value();
                 }
             }
+            number_of_variables=n;
             value = v;
             number_of_children = 2;
             children.push_back(child1);
@@ -263,6 +291,7 @@ class Tree{
                 }
                 default:{
                     something_wrong();
+                    return "";
                 }
             }           
         }
@@ -315,7 +344,7 @@ class Tree{
                             number_of_children--;
                             for(int grand_child=0; grand_child<children[i]->get_number_of_children(); grand_child++){
                                 if(not(keys_found.find(children[i]->get_child(grand_child)->get_key())!=keys_found.end() || children[i]->get_child(grand_child)->get_key() == 0b1111111111111111)){//Убираем A*A=A и A*1=A
-                                    if(keys_found.find(get_opposite_key(children[i]->get_key()))!=keys_found.end() or children[i]->get_key() == 0){
+                                    if(keys_found.find(get_opposite_key(children[i]->get_key(), degree_of_two(number_of_variables)))!=keys_found.end() or children[i]->get_key() == 0){
                                         to_null();
                                         return true;
                                     }
@@ -333,7 +362,7 @@ class Tree{
                             number_of_children --;
                         }
                         else{
-                            if(keys_found.find(get_opposite_key(children[i]->get_key()))!=keys_found.end() || children[i]->get_key() == 0){
+                            if(keys_found.find(get_opposite_key(children[i]->get_key(), degree_of_two(number_of_variables)))!=keys_found.end() || children[i]->get_key() == 0){
                                 to_null();
                                 return true;
                             }
@@ -364,7 +393,7 @@ class Tree{
                             number_of_children--;
                             for(int grand_child=0; grand_child<children[i]->get_number_of_children(); grand_child++){
                                if(not(keys_found.find(children[i]->get_key())!=keys_found.end() || children[i]->get_key() == 0)){//Убираем A+A=A и A+0=A
-                                    if(keys_found.find(get_opposite_key(children[i]->get_child(grand_child)->get_key()))!=keys_found.end() || children[i]->get_child(grand_child)->get_key() == 0b1111111111111111){
+                                    if(keys_found.find(get_opposite_key(children[i]->get_child(grand_child)->get_key(), degree_of_two(number_of_variables)))!=keys_found.end() || children[i]->get_child(grand_child)->get_key() == 0b1111111111111111){
                                         to_one();
                                         return true;
                                 }
@@ -382,7 +411,7 @@ class Tree{
                             number_of_children --;
                         }
                         else{
-                            if(keys_found.find(get_opposite_key(children[i]->get_key()))!=keys_found.end() or  children[i]->get_key() == 0b1111111111111111){
+                            if(keys_found.find(get_opposite_key(children[i]->get_key(), degree_of_two(number_of_variables)))!=keys_found.end() or  children[i]->get_key() == 0b1111111111111111){
                                 to_one();
                                 return true;
                             }
@@ -416,6 +445,7 @@ class Tree{
                 }
                 return true;
             }
+            return true;
         }
         void to_null(){//Превращает вершину в 0
             value = '0';
@@ -444,21 +474,8 @@ class Tree{
         int number_of_children = 0; //Количество детей у узла
         vector<Tree*> children; //Храним указатели на вершины детей
         int key; //Ключ, по умолчанию всё 0
+        int number_of_variables;
 };
-
-bool equal_tree(Tree* t1, Tree* t2){ //Эквивалентны ли выражения. Сравниваем по ключу
-    if(t1->get_key() == t2->get_key()){
-        return true;
-    }
-    else{
-        return false;
-    }
-}
-
-bool oposite_tree(Tree* tree1, Tree* tree2){//Обратны ли выражения. Сравниваем по ключу
-    if(tree1->get_key() & tree2->get_key() == 0 && tree1->get_key() & tree2->get_key() == 0b1111111111111111)
-    return true;
-}
 
 void make_dnf()//Ввод ДНФ, запись его в файл
 {
@@ -511,15 +528,15 @@ bool make_tree_from_dnf(Tree* tree){//Из ДНФ из файла делает �
     Tree *node; //Дерево из элементарной коньюкции, которое будем присоединять к t
     Tree * not_elem; //Дерево с отрицанием, которое входит в элементарную коньюкцию
     while(getline(fin, elem_kon)){
-        node = new Tree(7);
+        node = new Tree('*');
         for(int i=0; i<4; i++){
             switch(elem_kon[i]){
                 case '1':{
-                    node->add_child(new Tree(i+2));
+                    node->add_child( new Tree(simbols[i]));
                     break;
                 }
                 case '2':{
-                    node->add_child(new Tree(6, new Tree(i+2)));
+                    node->add_child(new Tree('!', new Tree(simbols[i])));
                     break;
                 }
             }
@@ -534,102 +551,60 @@ bool make_tree_from_dnf(Tree* tree){//Из ДНФ из файла делает �
     fin.close();
     return true;
 }
+
+//Тесты
+
+void test_degree_of_two(){//Тесты для функции по получению степеней двойки 
+    assert(degree_of_two(0) == 1);
+    assert(degree_of_two(1) == 2);
+    assert(degree_of_two(2) == 4);
+    assert(degree_of_two(3) == 8);
+    assert(degree_of_two(4) == 16);
+    assert(degree_of_two(5) == 32);
+    assert(degree_of_two(6) == 64);
+    assert(degree_of_two(7) == 128);
+    assert(degree_of_two(8) == 256);
+    assert(degree_of_two(9) == 512);
+    assert(degree_of_two(10) == 1024);
+}
+
 int main()
 {
+    const int n = 2;
+    unsigned int b = 0b001101;
+    unsigned c = 0b01101;
+    unsigned int a = get_opposite_key(b, n);
+    bitset<10> a1(a);
+    bitset<10> b1(b);
+    cout<<a<<' '<<b<<endl<<a1<<' '<<b1<<endl;
+    cout<<check_equal_keys(c, b)<<endl;
+    cout<<check_opposite_keys(c, b, n)<<endl;
+    
+    /*
+    const int n = 8;
+    int a = 0b00000101;
+    int c = 0b11111010;
+    int d = ~a;
+    int b = get_opposite_key(a, n);
+    bitset<n> a1(a);
+    bitset<n> b1(b);
+    b &= 0b11111111;
+    cout<<(c==b);
+    */
     /*
     //Тест работы с ДНФ
-    make_dnf();
+    //make_dnf();
     Tree t;
     make_tree_from_dnf(&t);
-    cout<<"Получившаяся ДНФ: "<<t.print()<<endl<<"Ключ дерева: "<<t.get_key()<<endl<<"Знаение в вершине до оптимизации: "<<t.get_value()<<endl;
+    bitset <16> x(t.get_key());
+    cout<<"Получившаяся ДНФ: "<<t.print()<<endl<<"Ключ дерева: "<<t.get_key()<<" : "<<x<<endl<<"Знаение в вершине до оптимизации: "<<t.get_value()<<endl;
     
     t.optimize();
     cout<<"Оптимизированный ДНФ: "<<t.print()<<endl<<"Знаение в вершине после оптимизации: "<<t.get_value()<<endl;
     */
-    
-    /*
-    //Пример оптимизации дерева
-    Tree t = Tree(7, new Tree(2), new Tree(7, new Tree(3), new Tree(7, new Tree(4), new Tree(5))));
-    cout<<"Дерево до оптимизации: "<<t.print()<<endl;
-    t.optimize();
-    cout<<"Дерево после оптимизации: "<<t.print()<<endl;
-    cout<<"Ключ дерева: "<<t.get_key()<<endl;
-    */
-    
-    /*
-    //Пример работы с разными деревьями
-    Tree a = Tree(2); //Дерево a
-    Tree b = Tree(3); //Дерево b
-    Tree c = Tree(4); //Дерево c
-    Tree d = Tree(5); //Дерево d
-    Tree n1 = Tree(6, new Tree(2)); //Дерево НЕ(a)
-    Tree n2 = Tree(6, new Tree(3)); //Дерево НЕ(b)
-    Tree n3 = Tree(6, new Tree(4)); //Дерево НЕ(c)
-    Tree n4 = Tree(6, new Tree(5)); //Дерево НЕ(d)
-    Tree nn1 = Tree(6, new Tree(6, new Tree(2))); //Дерево НЕ(НЕ(a))
-    Tree nn2 = Tree(6, new Tree(6, new Tree(3))); //Дерево НЕ(НЕ(b))
-    Tree nn3 = Tree(6, new Tree(6, new Tree(4))); //Дерево НЕ(НЕ(c))
-    Tree nn4 = Tree(6, new Tree(6, new Tree(5))); //Дерево НЕ(НЕ(d))
-    Tree qnn1 = Tree(7, new Tree(6, new Tree(2)), new Tree(2)); //Дерево НЕ(a) И a
-    Tree qnn2 = Tree(7, new Tree(6, new Tree(3)), new Tree(3)); //Дерево НЕ(b) И b
-    Tree qnn3 = Tree(7, new Tree(6, new Tree(4)), new Tree(4)); //Дерево НЕ(c) И c
-    Tree qnn4 = Tree(7, new Tree(6, new Tree(5)), new Tree(5)); //Дерево НЕ(d) И d
-    
-    cout<<"Дерево a: "<<a.print()<<endl<<"Дерево b: "<<b.print()<<endl<<"Дерево c: "<<c.print()<<endl<<"Дерево d: "<<d.print()<<endl;
-    cout<<"Дерево НЕ(a): "<<n1.print()<<endl<<"Дерево НЕ(b): "<<n2.print()<<endl<<"Дерево НЕ(c): "<<n3.print()<<endl<<"Дерево НЕ(d): "<<n4.print()<<endl;
-    cout<<"Дерево НЕ(НЕ(a)): "<<nn1.print()<<endl<<"Дерево НЕ(НЕ(b)): "<<nn2.print()<<endl<<"Дерево НЕ(НЕ(c)): "<<nn3.print()<<endl<<"Дерево НЕ(НЕ(d)): "<<nn4.print()<<endl;
-    cout<<"Дерево НЕ(a) И a: "<<qnn1.print()<<endl<<"Дерево НЕ(b) И b: "<<qnn2.print()<<endl<<"Дерево НЕ(c) И c: "<<qnn3.print()<<endl<<"Дерево НЕ(d) И d: "<<qnn4.print()<<endl;
-    
-    cout<<"Оптимизируем  все деревья"<<endl;
-    a.optimize();
-    b.optimize();
-    c.optimize();
-    d.optimize();
-    n1.optimize();
-    n2.optimize();
-    n3.optimize();
-    n4.optimize();
-    nn1.optimize();
-    nn2.optimize();
-    nn3.optimize();
-    nn4.optimize();
-    qnn1.optimize();
-    qnn2.optimize();
-    qnn3.optimize();
-    qnn4.optimize();
-    
-    cout<<"Дерево a: "<<a.print()<<endl<<"Дерево b: "<<b.print()<<endl<<"Дерево c: "<<c.print()<<endl<<"Дерево d: "<<d.print()<<endl;
-    cout<<"Дерево НЕ(a): "<<n1.print()<<endl<<"Дерево НЕ(b): "<<n2.print()<<endl<<"Дерево НЕ(c): "<<n3.print()<<endl<<"Дерево НЕ(d): "<<n4.print()<<endl;
-    cout<<"Дерево НЕ(НЕ(a)): "<<nn1.print()<<endl<<"Дерево НЕ(НЕ(b)): "<<nn2.print()<<endl<<"Дерево НЕ(НЕ(c)): "<<nn3.print()<<endl<<"Дерево НЕ(НЕ(d)): "<<nn4.print()<<endl;
-    cout<<"Дерево НЕ(a) И a: "<<qnn1.print()<<endl<<"Дерево НЕ(b) И b: "<<qnn2.print()<<endl<<"Дерево НЕ(c) И c: "<<qnn3.print()<<endl<<"Дерево НЕ(d) И d: "<<qnn4.print()<<endl;
-    
-    cout<<endl<<"Равны ли деревья"<<endl;
-    cout<<"Дерево a и Дерево a: "<<equal_tree(&a, &a)<<endl;
-    cout<<"Дерево b и Дерево b: "<<equal_tree(&b, &b)<<endl;
-    cout<<"Дерево c и Дерево c: "<<equal_tree(&c, &c)<<endl;
-    cout<<"Дерево d и Дерево d: "<<equal_tree(&d, &d)<<endl;
-    cout<<"Дерево a и Дерево НЕ(НЕ(a)): "<<equal_tree(&a, &nn1)<<endl;
-    cout<<"Дерево b и Дерево НЕ(НЕ(b)): "<<equal_tree(&b, &nn2)<<endl;
-    cout<<"Дерево c и Дерево НЕ(НЕ(c)): "<<equal_tree(&c, &nn3)<<endl;
-    cout<<"Дерево d и Дерево НЕ(НЕ(d)): "<<equal_tree(&d, &nn4)<<endl;
-    cout<<"Дерево a и Дерево НЕ(a) И a: "<<equal_tree(&a, &qnn1)<<endl;
-    cout<<"Дерево b и Дерево НЕ(b): "<<equal_tree(&b, &n2)<<endl;
-    cout<<"Дерево c и Дерево d: "<<equal_tree(&c, &d)<<endl;
-    cout<<"Дерево d и Дерево НЕ(НЕ(a)): "<<equal_tree(&d, &nn1)<<endl;
-    
-    cout<<endl<<"Обратны ли деревья"<<endl;
-    cout<<"Дерево a и Дерево НЕ(a): "<<oposite_tree(&a, &n1)<<endl;
-    cout<<"Дерево b и Дерево НЕ(b): "<<oposite_tree(&b, &n2)<<endl;
-    cout<<"Дерево c и Дерево НЕ(c): "<<oposite_tree(&c, &n3)<<endl;
-    cout<<"Дерево d и Дерево НЕ(d): "<<oposite_tree(&d, &n4)<<endl;
-    cout<<"Дерево a и Дерево НЕ(НЕ(a)): "<<oposite_tree(&a, &nn1)<<endl;
-    cout<<"Дерево b и Дерево НЕ(НЕ(b)): "<<oposite_tree(&b, &nn2)<<endl;
-    cout<<"Дерево c и Дерево НЕ(НЕ(c)): "<<oposite_tree(&c, &nn3)<<endl;
-    cout<<"Дерево d и Дерево НЕ(НЕ(d)): "<<oposite_tree(&d, &nn4)<<endl;
-    cout<<"Дерево a и Дерево НЕ(a) И a: "<<oposite_tree(&a, &qnn1)<<endl;
-    cout<<"Дерево b и Дерево b: "<<oposite_tree(&b, &b)<<endl;
-    cout<<"Дерево c и Дерево d: "<<oposite_tree(&c, &d)<<endl;
-    cout<<"Дерево d и Дерево НЕ(НЕ(a)): "<<oposite_tree(&d, &nn1)<<endl;
-    */
     return 0;
 }
+/*
+1111110000110000
+1111110011110000
+*/

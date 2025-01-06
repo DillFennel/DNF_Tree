@@ -1,0 +1,95 @@
+/*
+    //Тест работы с ДНФ
+    make_dnf();
+    Tree t;
+    make_tree_from_dnf(&t);
+    cout<<"Получившаяся ДНФ: "<<t.print()<<endl<<"Ключ дерева: "<<t.get_key()<<endl<<"Знаение в вершине до оптимизации: "<<t.get_value()<<endl;
+    
+    t.optimize();
+    cout<<"Оптимизированный ДНФ: "<<t.print()<<endl<<"Знаение в вершине после оптимизации: "<<t.get_value()<<endl;
+    */
+    
+    /*
+    //Пример оптимизации дерева
+    Tree t = Tree(7, new Tree(2), new Tree(7, new Tree(3), new Tree(7, new Tree(4), new Tree(5))));
+    cout<<"Дерево до оптимизации: "<<t.print()<<endl;
+    t.optimize();
+    cout<<"Дерево после оптимизации: "<<t.print()<<endl;
+    cout<<"Ключ дерева: "<<t.get_key()<<endl;
+    */
+    
+    /*
+    //Пример работы с разными деревьями
+    Tree a = Tree(2); //Дерево a
+    Tree b = Tree(3); //Дерево b
+    Tree c = Tree(4); //Дерево c
+    Tree d = Tree(5); //Дерево d
+    Tree n1 = Tree(6, new Tree(2)); //Дерево НЕ(a)
+    Tree n2 = Tree(6, new Tree(3)); //Дерево НЕ(b)
+    Tree n3 = Tree(6, new Tree(4)); //Дерево НЕ(c)
+    Tree n4 = Tree(6, new Tree(5)); //Дерево НЕ(d)
+    Tree nn1 = Tree(6, new Tree(6, new Tree(2))); //Дерево НЕ(НЕ(a))
+    Tree nn2 = Tree(6, new Tree(6, new Tree(3))); //Дерево НЕ(НЕ(b))
+    Tree nn3 = Tree(6, new Tree(6, new Tree(4))); //Дерево НЕ(НЕ(c))
+    Tree nn4 = Tree(6, new Tree(6, new Tree(5))); //Дерево НЕ(НЕ(d))
+    Tree qnn1 = Tree(7, new Tree(6, new Tree(2)), new Tree(2)); //Дерево НЕ(a) И a
+    Tree qnn2 = Tree(7, new Tree(6, new Tree(3)), new Tree(3)); //Дерево НЕ(b) И b
+    Tree qnn3 = Tree(7, new Tree(6, new Tree(4)), new Tree(4)); //Дерево НЕ(c) И c
+    Tree qnn4 = Tree(7, new Tree(6, new Tree(5)), new Tree(5)); //Дерево НЕ(d) И d
+    
+    cout<<"Дерево a: "<<a.print()<<endl<<"Дерево b: "<<b.print()<<endl<<"Дерево c: "<<c.print()<<endl<<"Дерево d: "<<d.print()<<endl;
+    cout<<"Дерево НЕ(a): "<<n1.print()<<endl<<"Дерево НЕ(b): "<<n2.print()<<endl<<"Дерево НЕ(c): "<<n3.print()<<endl<<"Дерево НЕ(d): "<<n4.print()<<endl;
+    cout<<"Дерево НЕ(НЕ(a)): "<<nn1.print()<<endl<<"Дерево НЕ(НЕ(b)): "<<nn2.print()<<endl<<"Дерево НЕ(НЕ(c)): "<<nn3.print()<<endl<<"Дерево НЕ(НЕ(d)): "<<nn4.print()<<endl;
+    cout<<"Дерево НЕ(a) И a: "<<qnn1.print()<<endl<<"Дерево НЕ(b) И b: "<<qnn2.print()<<endl<<"Дерево НЕ(c) И c: "<<qnn3.print()<<endl<<"Дерево НЕ(d) И d: "<<qnn4.print()<<endl;
+    
+    cout<<"Оптимизируем  все деревья"<<endl;
+    a.optimize();
+    b.optimize();
+    c.optimize();
+    d.optimize();
+    n1.optimize();
+    n2.optimize();
+    n3.optimize();
+    n4.optimize();
+    nn1.optimize();
+    nn2.optimize();
+    nn3.optimize();
+    nn4.optimize();
+    qnn1.optimize();
+    qnn2.optimize();
+    qnn3.optimize();
+    qnn4.optimize();
+    
+    cout<<"Дерево a: "<<a.print()<<endl<<"Дерево b: "<<b.print()<<endl<<"Дерево c: "<<c.print()<<endl<<"Дерево d: "<<d.print()<<endl;
+    cout<<"Дерево НЕ(a): "<<n1.print()<<endl<<"Дерево НЕ(b): "<<n2.print()<<endl<<"Дерево НЕ(c): "<<n3.print()<<endl<<"Дерево НЕ(d): "<<n4.print()<<endl;
+    cout<<"Дерево НЕ(НЕ(a)): "<<nn1.print()<<endl<<"Дерево НЕ(НЕ(b)): "<<nn2.print()<<endl<<"Дерево НЕ(НЕ(c)): "<<nn3.print()<<endl<<"Дерево НЕ(НЕ(d)): "<<nn4.print()<<endl;
+    cout<<"Дерево НЕ(a) И a: "<<qnn1.print()<<endl<<"Дерево НЕ(b) И b: "<<qnn2.print()<<endl<<"Дерево НЕ(c) И c: "<<qnn3.print()<<endl<<"Дерево НЕ(d) И d: "<<qnn4.print()<<endl;
+    
+    cout<<endl<<"Равны ли деревья"<<endl;
+    cout<<"Дерево a и Дерево a: "<<equal_tree(&a, &a)<<endl;
+    cout<<"Дерево b и Дерево b: "<<equal_tree(&b, &b)<<endl;
+    cout<<"Дерево c и Дерево c: "<<equal_tree(&c, &c)<<endl;
+    cout<<"Дерево d и Дерево d: "<<equal_tree(&d, &d)<<endl;
+    cout<<"Дерево a и Дерево НЕ(НЕ(a)): "<<equal_tree(&a, &nn1)<<endl;
+    cout<<"Дерево b и Дерево НЕ(НЕ(b)): "<<equal_tree(&b, &nn2)<<endl;
+    cout<<"Дерево c и Дерево НЕ(НЕ(c)): "<<equal_tree(&c, &nn3)<<endl;
+    cout<<"Дерево d и Дерево НЕ(НЕ(d)): "<<equal_tree(&d, &nn4)<<endl;
+    cout<<"Дерево a и Дерево НЕ(a) И a: "<<equal_tree(&a, &qnn1)<<endl;
+    cout<<"Дерево b и Дерево НЕ(b): "<<equal_tree(&b, &n2)<<endl;
+    cout<<"Дерево c и Дерево d: "<<equal_tree(&c, &d)<<endl;
+    cout<<"Дерево d и Дерево НЕ(НЕ(a)): "<<equal_tree(&d, &nn1)<<endl;
+    
+    cout<<endl<<"Обратны ли деревья"<<endl;
+    cout<<"Дерево a и Дерево НЕ(a): "<<oposite_tree(&a, &n1)<<endl;
+    cout<<"Дерево b и Дерево НЕ(b): "<<oposite_tree(&b, &n2)<<endl;
+    cout<<"Дерево c и Дерево НЕ(c): "<<oposite_tree(&c, &n3)<<endl;
+    cout<<"Дерево d и Дерево НЕ(d): "<<oposite_tree(&d, &n4)<<endl;
+    cout<<"Дерево a и Дерево НЕ(НЕ(a)): "<<oposite_tree(&a, &nn1)<<endl;
+    cout<<"Дерево b и Дерево НЕ(НЕ(b)): "<<oposite_tree(&b, &nn2)<<endl;
+    cout<<"Дерево c и Дерево НЕ(НЕ(c)): "<<oposite_tree(&c, &nn3)<<endl;
+    cout<<"Дерево d и Дерево НЕ(НЕ(d)): "<<oposite_tree(&d, &nn4)<<endl;
+    cout<<"Дерево a и Дерево НЕ(a) И a: "<<oposite_tree(&a, &qnn1)<<endl;
+    cout<<"Дерево b и Дерево b: "<<oposite_tree(&b, &b)<<endl;
+    cout<<"Дерево c и Дерево d: "<<oposite_tree(&c, &d)<<endl;
+    cout<<"Дерево d и Дерево НЕ(НЕ(a)): "<<oposite_tree(&d, &nn1)<<endl;
+    */

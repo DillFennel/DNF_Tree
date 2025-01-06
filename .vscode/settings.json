@@ -1,12 +1,7 @@
 {
+    "cmake.ignoreCMakeListsMissing": true,
     "files.associations": {
-        "iostream": "cpp",
-        "optional": "cpp",
-        "system_error": "cpp",
-        "array": "cpp",
-        "functional": "cpp",
-        "tuple": "cpp",
-        "type_traits": "cpp",
-        "utility": "cpp"
+        "bitset": "cpp",
+        "iostream": "cpp"
     }
 }

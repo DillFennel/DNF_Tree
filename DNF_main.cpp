@@ -212,7 +212,6 @@ class Tree{
             value = v;
         }
         Tree(char v, Tree* child1, Tree* child2, unsigned n=4){
-            cout<<'@'<<endl;
             switch(v){
                 case '0':
                 case '1':
@@ -301,7 +300,6 @@ class Tree{
             return false;
         }
         void optimize_from_one_child(){
-            cout<<"Начата оптимизация из одного ребенка"<<endl;
             value = children[0]->get_value();
             key = children[0]->get_key();
             for(int ind_child = 0; ind_child < children[0]->get_number_of_children(); ind_child++){
@@ -310,9 +308,7 @@ class Tree{
             delete_child(0);
         }
         bool optimization_for_multiple_child_cases(){//Возвращает, нужно ли прекратить оптимизацию
-            cout<<"Начата оптимизация для многих детей"<<endl;
             unsigned value_to_value, value_to_const;
-            cout<<value<<endl;
             switch(value){
                 case '*':{
                     value_to_value = 0b1111111111111111;
@@ -373,7 +369,6 @@ class Tree{
             return false;
         }
         bool optimize(){//Оптимизация дерева
-            cout<<"Начата оптимизация: "<<print()<<endl;
             switch(value){
                 case '0':
                 case 'a':
@@ -386,7 +381,7 @@ class Tree{
                     if(number_of_children>0){
                         children[0]->optimize();
                     }
-                    if(number_of_children = 0){
+                    if(number_of_children == 0){
                         to_null();
                         return true;
                     }
@@ -553,15 +548,5 @@ void test_degree_of_two(){//Тесты для функции по получен
 
 int main()
 {
-    
-    //Тест работы с ДНФ
-    //make_dnf();
-    Tree t;
-    make_tree_from_dnf(&t);
-    bitset <16> x(t.get_key());
-    cout<<"Получившаяся ДНФ: "<<t.print()<<endl<<"Ключ дерева: "<<t.get_key()<<" : "<<x<<endl<<"Знаение в вершине до оптимизации: "<<t.get_value()<<endl;
-    
-    t.optimize();
-    cout<<"Оптимизированный ДНФ: "<<t.print()<<endl<<"Знаение в вершине после оптимизации: "<<t.get_value()<<endl;
     return 0;
 }

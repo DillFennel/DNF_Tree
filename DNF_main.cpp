@@ -40,7 +40,6 @@ bool check_opposite_keys(unsigned key1, unsigned key2, unsigned number_of_variab
 
 //char simbols [11] = {'0', '1', 'a', 'b', 'c', 'd', '!', '*', '+', '>', '='};//Все возможные значения в вершине
 char simbols[4] = {'a', 'b', 'c', 'd'};
-
 class Tree{
     public:
         unsigned get_key(){ //

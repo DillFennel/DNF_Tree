@@ -31,14 +31,6 @@ unsigned get_opposite_key(unsigned key, unsigned number_of_variables){//По к�
     return (~key&get_mask(number_of_variables));
 }
 
-bool check_equal_keys(unsigned key1, unsigned key2){ //Проверяет, эквивалентны ли выражения. Сравниваем по ключу
-    return (key1 == key2);
-}
-bool check_opposite_keys(unsigned key1, unsigned key2, unsigned number_of_variables){//Проверяет, обратны ли выражения. Сравниваем по ключу. Также указываем количество переменных
-    return (key1 == get_opposite_key(key2, number_of_variables));
-}
-
-//char simbols [11] = {'0', '1', 'a', 'b', 'c', 'd', '!', '*', '+', '>', '='};//Все возможные значения в вершине
 char simbols[4] = {'a', 'b', 'c', 'd'};
 class Tree{
     public:
@@ -292,7 +284,96 @@ class Tree{
                 }
             }           
         }
+        bool optimize_equal_operations(unsigned value_to_value, unsigned value_to_const, int index_child, set<unsigned> *keys_found){//Возвращает, нужно ли прекратить оптимизацию
+            number_of_children--;
+            for(int grand_child=0; grand_child<children[index_child]->get_number_of_children(); grand_child++){
+                if(not(keys_found->find(children[index_child]->get_child(grand_child)->get_key())!=keys_found->end() || children[index_child]->get_child(grand_child)->get_key() == value_to_value)){
+                    if(keys_found->find(get_opposite_key(children[index_child]->get_key(), number_of_variables))!=keys_found->end() or children[index_child]->get_key() == value_to_const){
+                        to_null();
+                        return true;
+                    }
+                    keys_found->insert(children[index_child]->get_child(grand_child)->get_key());
+                    number_of_children++;
+                    children.push_back(children[index_child]->get_child(grand_child));
+                }
+            }
+            delete_child(index_child);
+            return false;
+        }
+        void optimize_from_one_child(){
+            cout<<"Начата оптимизация из одного ребенка"<<endl;
+            value = children[0]->get_value();
+            key = children[0]->get_key();
+            for(int ind_child = 0; ind_child < children[0]->get_number_of_children(); ind_child++){
+                add_child(children[0]->get_child(ind_child));
+            }
+            delete_child(0);
+        }
+        bool optimization_for_multiple_child_cases(){//Возвращает, нужно ли прекратить оптимизацию
+            cout<<"Начата оптимизация для многих детей"<<endl;
+            unsigned value_to_value, value_to_const;
+            cout<<value<<endl;
+            switch(value){
+                case '*':{
+                    value_to_value = 0b1111111111111111;
+                    value_to_const = 0;
+                    break;
+                }
+                case '+':{
+                    value_to_value = 0;
+                    value_to_const = 0b1111111111111111;
+                    break;
+                }
+                default:{
+                    wrong_value();
+                }
+            }
+            for(auto child: children){
+                child->optimize();
+            }
+            if(number_of_children==0){
+                to_null();
+                return true;
+            }
+            if(number_of_children==1){
+                optimize_from_one_child();
+                return true;
+            }
+            set <unsigned> keys_found;//Храним ключи, которые уже встречались
+            for(int i = number_of_children-1; i>=0; i--){//Идем справа нелево, чтобы индексы элементов, которые будем брать дальше, не менялись
+                if(children[i]->get_value() == value){
+                    if(optimize_equal_operations(value_to_value, value_to_const, i, &keys_found)){
+                        return true;
+                    }
+                    continue;
+                }
+                if(keys_found.find(children[i]->get_key())!=keys_found.end() || children[i]->get_key() == value_to_value){
+                    delete_child(i);
+                }
+                else{
+                    if(keys_found.find(get_opposite_key(children[i]->get_key(), number_of_variables))!=keys_found.end() || children[i]->get_key() == value_to_const){
+                        switch(value){
+                            case '*':{
+                                to_null();
+                                break;
+                            }
+                            case '+':{
+                                to_one();
+                                break;
+                            }
+                            default:{
+                                wrong_value();
+                            }
+                        }
+                        return true;
+                    }
+                    keys_found.insert(children[i]->get_key());
+                }
+            }
+            return false;
+        }
         bool optimize(){//Оптимизация дерева
+            cout<<"Начата оптимизация: "<<print()<<endl;
             switch(value){
                 case '0':
                 case 'a':
@@ -320,7 +401,15 @@ class Tree{
                     }
                     break;
                 }
-                case '*':{
+                case '*':
+                case '+':{
+                    if(optimization_for_multiple_child_cases()){
+                        return true;
+                    }
+                    break; 
+                }
+                case '>':
+                case '=':{
                     for(auto child: children){
                         child->optimize();
                     }
@@ -329,166 +418,14 @@ class Tree{
                         return true;
                     }
                     if(number_of_children==1){
-                        value = children[0]->get_value();
-                        key = children[0]->get_key();
-                        for(int ind_child = 0; ind_child < children[0]->get_number_of_children(); ind_child++){
-                            add_child(children[0]->get_child(ind_child));
-                        }
-                        delete_child(0);
+                        optimize_from_one_child();
                         return true;
-                    }
-                    set <int> keys_found;//Храним ключи, которые уже встречались
-                    for(int i = number_of_children-1; i>=0; i--){//Идем справа нелево, чтобы индексы элементов, которые будем брать дальше, не менялись
-                        if(children[i]->get_value() == '*'){//Используем правило A*(B*C)=A*B*C
-                            number_of_children--;
-                            for(int grand_child=0; grand_child<children[i]->get_number_of_children(); grand_child++){
-                                if(not(keys_found.find(children[i]->get_child(grand_child)->get_key())!=keys_found.end() || children[i]->get_child(grand_child)->get_key() == 0b1111111111111111)){//Убираем A*A=A и A*1=A
-                                    if(keys_found.find(get_opposite_key(children[i]->get_key(), number_of_variables))!=keys_found.end() or children[i]->get_key() == 0){
-                                        to_null();
-                                        return true;
-                                    }
-                                    keys_found.insert(children[i]->get_child(grand_child)->get_key());
-                                    number_of_children++;
-                                    children.push_back(children[i]->get_child(grand_child));
-                                }
-                            }
-                            delete_child(i);
-                            continue;
-                        }
-                        if(keys_found.find(children[i]->get_key())!=keys_found.end() || children[i]->get_key() == 0b1111111111111111){//Убираем A*A=A и A*1=A
-                            delete_child(i);
-                        }
-                        else{
-                            if(keys_found.find(get_opposite_key(children[i]->get_key(), number_of_variables))!=keys_found.end() || children[i]->get_key() == 0){
-                                to_null();
-                                return true;
-                            }
-                            keys_found.insert(children[i]->get_key());
-                        }
-                    }
-                    break; 
-                }
-                /*
-                case '*':{
-                    if(number_of_children==0){
-                        to_null();
-                        return true;
-                    }
-                    if(number_of_children==1){
-                        value = children[0]->get_value();
-                        key = children[0]->get_key();
-                        for(int ind_child = 0; ind_child < children[0]->get_number_of_children(); ind_child++){
-                            add_child(children[0]->get_child(ind_child));
-                        }
-                        delete children[0];
-                        delete_child(0);
-                    }
-                    set <int> keys_found;//Храним ключи, которые уже встречались
-                    for(int i = number_of_children-1; i>=0; i--){//Идем справа нелево, чтобы индексы элементов, которые будем брать дальше, не менялись
-                        if(children[i]->get_value() == '*'){//Используем правило A*(B*C)=A*B*C
-                            children[i]->optimize();
-                            number_of_children--;
-                            for(int grand_child=0; grand_child<children[i]->get_number_of_children(); grand_child++){
-                                if(not(keys_found.find(children[i]->get_child(grand_child)->get_key())!=keys_found.end() || children[i]->get_child(grand_child)->get_key() == 0b1111111111111111)){//Убираем A*A=A и A*1=A
-                                    if(keys_found.find(get_opposite_key(children[i]->get_key(), number_of_variables))!=keys_found.end() or children[i]->get_key() == 0){
-                                        to_null();
-                                        return true;
-                                    }
-                                    keys_found.insert(children[i]->get_child(grand_child)->get_key());
-                                    number_of_children++;
-                                    children[i]->get_child(grand_child)->optimize();//Оптимизируем уникальные поддеревья
-                                    children.push_back(children[i]->get_child(grand_child));
-                                }
-                            }
-                            delete_child(i);
-                            continue;
-                        }
-                        if(keys_found.find(children[i]->get_key())!=keys_found.end() || children[i]->get_key() == 0b1111111111111111){//Убираем A*A=A и A*1=A
-                            children.erase(children.begin()+i);
-                            number_of_children --;
-                        }
-                        else{
-                            if(keys_found.find(get_opposite_key(children[i]->get_key(), number_of_variables))!=keys_found.end() || children[i]->get_key() == 0){
-                                to_null();
-                                return true;
-                            }
-                            keys_found.insert(children[i]->get_key());
-                            children[i]->optimize();//Оптимизируем уникальные поддеревья
-                        }
-                    }
-                    break; 
-                }
-                */
-                case '+':{
-                    if(number_of_children==0){
-                        to_null();
-                        return true;
-                    }
-                    if(number_of_children==1){
-                        value = children[0]->get_value();
-                        key = children[0]->get_key();
-                        for(int ind_child = 0; ind_child < children[0]->get_number_of_children(); ind_child++){
-                            add_child(children[0]->get_child(ind_child));
-                        }
-                        delete_child(0);
-                    }
-                    set <int> keys_found;//Храним ключи, которые уже встречались
-                    for(int i = number_of_children-1; i>=0; i--){
-                        if(children[i]->get_value() == '+'){//Используем правило A+(B+C)=A+B+C
-                            children[i]->optimize();
-                            number_of_children--;
-                            for(int grand_child=0; grand_child<children[i]->get_number_of_children(); grand_child++){
-                               if(not(keys_found.find(children[i]->get_key())!=keys_found.end() || children[i]->get_key() == 0)){//Убираем A+A=A и A+0=A
-                                    if(keys_found.find(get_opposite_key(children[i]->get_child(grand_child)->get_key(), number_of_variables))!=keys_found.end() || children[i]->get_child(grand_child)->get_key() == 0b1111111111111111){
-                                        to_one();
-                                        return true;
-                                }
-                                    keys_found.insert(children[i]->get_child(grand_child)->get_key());
-                                    number_of_children++;
-                                    children[i]->get_child(grand_child)->optimize();//Оптимизируем уникальные поддеревья
-                                    children.push_back(children[i]->get_child(grand_child));
-                               }
-                            }
-                            delete_child(i);
-                            continue;
-                        }
-                        if(keys_found.find(children[i]->get_key())!=keys_found.end() or children[i]->get_key() == 0){//Убираем A+A=A и A+0=A
-                            children.erase(children.begin()+i);
-                            number_of_children --;
-                        }
-                        else{
-                            if(keys_found.find(get_opposite_key(children[i]->get_key(), number_of_variables))!=keys_found.end() or  children[i]->get_key() == 0b1111111111111111){
-                                to_one();
-                                return true;
-                            }
-                            keys_found.insert(children[i]->get_key());
-                            children[i]->optimize();//Оптимизируем уникальные поддеревья
-                        }
                     }
                     break;
-                }
-                case '>':
-                case '=':{
-                    if(number_of_children==0){
-                        to_null();
-                        return true;
-                    }
-                    if(number_of_children==1){
-                        value = children[0]->get_value();
-                        key = children[0]->get_key();
-                        for(int ind_child = 0; ind_child < children[0]->get_number_of_children(); ind_child++){
-                            add_child(children[0]->get_child(ind_child));
-                        }
-                        delete_child(0);
-                    }
-                    children[0]->optimize();
-                    children[1]->optimize();
-                    break; 
                 }
                 default:{
                     something_wrong();
                 }
-                return true;
             }
             return true;
         }
@@ -506,20 +443,10 @@ class Tree{
         }
     private:
         char value = '+'; //Значение, хранящиеся в узле
-        /*
-        Значение   Что значит
-        0          0
-        1          1
-        [2-5]      переменная (a, b, c или d)
-        [6-10]     операции [не, и, или, импликация, эквивалент]
-        
-        То есть, значени может быть в диапазоне [0, 10]
-        Если в узле лежит переменная, то у нее не может быть детей
-        */
         unsigned number_of_children = 0; //Количество детей у узла
         vector<Tree*> children; //Храним указатели на вершины детей
-        unsigned key = 0; //Ключ, по умолчанию всё 0
-        unsigned number_of_variables = 0;
+        unsigned key = 0; //Ключ, по умолчанию 0
+        unsigned number_of_variables = 0; //Сколько переменных возможно
 };
 
 void make_dnf()//Ввод ДНФ, запись его в файл
@@ -548,6 +475,10 @@ void make_dnf()//Ввод ДНФ, запись его в файл
                 }
                 case -1:{
                     fout<<2;
+                    break;
+                }
+                default:{
+                    fout<<0;
                 }
             }
             /*
@@ -576,6 +507,9 @@ bool make_tree_from_dnf(Tree* tree){//Из ДНФ из файла делает �
         node = new Tree('*');
         for(int i=0; i<4; i++){
             switch(elem_kon[i]){
+                case '0':{
+                    continue;
+                }
                 case '1':{
                     node->add_child( new Tree(simbols[i]));
                     break;
@@ -583,6 +517,10 @@ bool make_tree_from_dnf(Tree* tree){//Из ДНФ из файла делает �
                 case '2':{
                     node->add_child(new Tree('!', new Tree(simbols[i])));
                     break;
+                }
+                default:{
+                    cerr<<"Ошибка: Неправильный коэффицент в файле с ДНФ: "<<elem_kon[i]<<endl;
+                    exit(6);
                 }
             }
         }

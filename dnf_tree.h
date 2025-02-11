@@ -1,8 +1,10 @@
 #include <string>
 #include <vector>
 #include <set>
+/*
 #ifndef DNF_TREE_H
 #define DNF_TREE_H
+*/
  
 unsigned degree_of_two(int n);
 unsigned get_mask(unsigned number_of_variables);
@@ -33,13 +35,15 @@ public:
     void to_null();
     void to_one();
 private:
-    char value;
-    unsigned number_of_children;
-    std::vector<Tree*> children;
-    unsigned key;
-    unsigned number_of_variables;
+    char value = '+'; //Значение, хранящиеся в узле
+    unsigned number_of_children = 0; //Количество детей у узла
+    std::vector<Tree*> children; //Храним указатели на вершины детей
+    unsigned key = 0; //Ключ, по умолчанию 0
+    unsigned number_of_variables = 0; //Сколько переменных возможно
 };
 void make_dnf();
 bool make_tree_from_dnf(Tree* tree);
- 
+
+/*
 #endif
+*/

@@ -1,0 +1,14 @@
+
+all: work
+
+work: dnf_tree.o dnf_tests.o
+    g++ dnf_tree.o dnf_tests.o -o work
+
+dnf_tree.o:
+    g++ -c dnf_tree.o
+
+dnf_tests.o:
+    g++ -c dnf_tests.o
+
+clean:
+    rm -rf *.o work

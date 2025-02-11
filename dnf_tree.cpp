@@ -1,3 +1,4 @@
+#include "dnf_tree.h"
 #include <iostream>
 #include <fstream> 
 #include <vector>
@@ -31,9 +32,8 @@ unsigned get_opposite_key(unsigned key, unsigned number_of_variables){//По к�
 }
 
 char simbols[4] = {'a', 'b', 'c', 'd'};
-class Tree{
-    public:
-        unsigned get_key(){ //
+
+        unsigned Tree::get_key(){ //
         /*
         Ниже представленно, чему соответствует каждый элемент ключа вершины в таблице истиности.
             a b c d   f(a, b, c, d)
@@ -57,7 +57,7 @@ class Tree{
         */
             return key;
         }
-        Tree * get_child(int n){//Возвращает ребенка вершины под указанным номером
+        Tree * Tree::get_child(int n){//Возвращает ребенка вершины под указанным номером
             if(n<0 or n>=number_of_children){
                 cerr<<n<<' '<<number_of_children<<endl;
                 cerr<<"Ошибка: Такого ребенка нет (Пытаемся получить ребенка под номером "<<n<<", а всего детей "<<number_of_children<<").";
@@ -65,17 +65,17 @@ class Tree{
             }
             return children[n];
         }
-        unsigned get_number_of_children(){//Возвращает количество детей у вершины
+        unsigned Tree::get_number_of_children(){//Возвращает количество детей у вершины
             return number_of_children;
         }
-        void set_value(int v){//Позволяет установить значение в вершине
+        void Tree::set_value(int v){//Позволяет установить значение в вершине
         //Добавить условия для значений
             value = v;
         }
-        char get_value(){//Позволяет получить значение, установленное в вершине
+        char Tree::get_value(){//Позволяет получить значение, установленное в вершине
             return value;
         }
-        bool add_child(Tree * new_child){//Позволяет добавить ребенка вершине
+        bool Tree::add_child(Tree * new_child){//Позволяет добавить ребенка вершине
             switch (value){
                 case '0':
                 case '1':
@@ -119,30 +119,31 @@ class Tree{
             children.push_back(new_child);
             return true;
         }
-        void delete_child(int ind_child){
+        void Tree::delete_child(int ind_child){
             delete children[ind_child];
             children.erase(children.begin() + ind_child);
             number_of_children--;
         }
-        void wrong_value(){
+        void Tree::wrong_value(){
             cerr<<"Ошибка: Такое значение невозможно.";
             exit(1);
         }
-        void cant_have_children(){
+        void Tree::cant_have_children(){
             cerr<<"Ошибка: у переменных не может быть детей.";
             exit(2);
         }
-        void too_many_children(){
+        void Tree::too_many_children(){
             cerr<<"Ошибка: слишком много детей для операции.";
             exit(3);
         }
-        void something_wrong(){
+        void Tree::something_wrong(){
             cerr<<"Ошибка.";
             exit(4);
         }
-        Tree(unsigned n=4){//По умолчанию величина в вершине равна 8, то есть по умолчанию стоит операция суммы
-            number_of_variables=n;}
-        Tree(char v, unsigned n=4){
+        Tree::Tree(unsigned n){//По умолчанию величина в вершине равна 8, то есть по умолчанию стоит операция суммы
+            number_of_variables=n;
+        }
+        Tree::Tree(char v, unsigned n){
             switch(v){
                 case '0':
                 case '!':
@@ -180,7 +181,7 @@ class Tree{
             number_of_variables=n;
             value = v;
         }
-        Tree(char v, Tree* child, unsigned n=4){     
+        Tree::Tree(char v, Tree* child, unsigned n){     
             switch (v){
                 case '0':
                 case '1':
@@ -210,7 +211,7 @@ class Tree{
             children.push_back(child);
             value = v;
         }
-        Tree(char v, Tree* child1, Tree* child2, unsigned n=4){
+        Tree::Tree(char v, Tree* child1, Tree* child2, unsigned n){
             switch(v){
                 case '0':
                 case '1':
@@ -249,7 +250,7 @@ class Tree{
             children.push_back(child1);
             children.push_back(child2);
         }
-        string print(){//Позволяет получить выражение, хранящиеся в дереве, в понятном виде
+        string Tree::print(){//Позволяет получить выражение, хранящиеся в дереве, в понятном виде
             switch(value){
                 case '0':
                 case '1':
@@ -282,7 +283,7 @@ class Tree{
                 }
             }           
         }
-        bool optimize_equal_operations(unsigned value_to_value, unsigned value_to_const, int index_child, set<unsigned> *keys_found){//Возвращает, нужно ли прекратить оптимизацию
+        bool Tree::optimize_equal_operations(unsigned value_to_value, unsigned value_to_const, int index_child, set<unsigned> *keys_found){//Возвращает, нужно ли прекратить оптимизацию
             number_of_children--;
             for(int grand_child=0; grand_child<children[index_child]->get_number_of_children(); grand_child++){
                 if(not(keys_found->find(children[index_child]->get_child(grand_child)->get_key())!=keys_found->end() || children[index_child]->get_child(grand_child)->get_key() == value_to_value)){
@@ -298,7 +299,7 @@ class Tree{
             delete_child(index_child);
             return false;
         }
-        void optimize_from_one_child(){
+        void Tree::optimize_from_one_child(){
             value = children[0]->get_value();
             key = children[0]->get_key();
             for(int ind_child = 0; ind_child < children[0]->get_number_of_children(); ind_child++){
@@ -306,7 +307,7 @@ class Tree{
             }
             delete_child(0);
         }
-        bool optimization_for_multiple_child_cases(){//Возвращает, нужно ли прекратить оптимизацию
+        bool Tree::optimization_for_multiple_child_cases(){//Возвращает, нужно ли прекратить оптимизацию
             unsigned value_to_value, value_to_const;
             switch(value){
                 case '*':{
@@ -367,7 +368,7 @@ class Tree{
             }
             return false;
         }
-        bool optimize(){//Оптимизация дерева
+        bool Tree::optimize(){//Оптимизация дерева
             switch(value){
                 case '0':
                 case 'a':
@@ -423,25 +424,19 @@ class Tree{
             }
             return true;
         }
-        void to_null(){//Превращает вершину в 0
+        void Tree::to_null(){//Превращает вершину в 0
             value = '0';
             number_of_children = 0;
             children.clear();
             key = 0;
         }
-        void to_one(){//Превращает вершину в 1
+        void Tree::to_one(){//Превращает вершину в 1
             value = '1';
             number_of_children = 0;
             children.clear();
             key = 0b1111111111111111;
         }
-    private:
-        char value = '+'; //Значение, хранящиеся в узле
-        unsigned number_of_children = 0; //Количество детей у узла
-        vector<Tree*> children; //Храним указатели на вершины детей
-        unsigned key = 0; //Ключ, по умолчанию 0
-        unsigned number_of_variables = 0; //Сколько переменных возможно
-};
+        
 
 void make_dnf()//Ввод ДНФ, запись его в файл
 {
@@ -527,9 +522,4 @@ bool make_tree_from_dnf(Tree* tree){//Из ДНФ из файла делает �
     }
     fin.close();
     return true;
-}
-
-int main()
-{
-    return 0;
 }
